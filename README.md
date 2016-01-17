@@ -10,4 +10,6 @@ Then, from git-bash, cd to the directory with bot.js in it, and run
 npm install botkit
 
 Then
+```shell
 token=<your bot token from slack> node bot.js
+```
