@@ -7,6 +7,9 @@ if (!process.env.token) {
 var Botkit = require('./lib/Botkit.js');
 var underscore = require('./underscore-min.js');
 var os = require('os');
+var botConfig = require('./config.js');
+
+var globalListenMode = botConfig.globalListenMode;
 
 var controller = Botkit.slackbot({
     debug: false,
@@ -67,7 +70,7 @@ saveChannelState = function(channelData, cb) {
 	controller.storage.channels.save(channelData, cb);
 }
 
-controller.hears(['lets have lunch'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['lets have lunch'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (channelState.lunchState) {
 			if (channelState.lunchState.state != "idle") {
@@ -84,7 +87,7 @@ controller.hears(['lets have lunch'], 'direct_message,direct_mention,mention', f
 	});
 });
 
-controller.hears(['me', 'i am', 'yes', 'yeah', 'i did', "i'm in"], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['me', 'i am', 'yes', 'yeah', 'i did', "i'm in"], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (!channelState) {
 			return;
@@ -148,7 +151,7 @@ convoDroveInStepHowMany = function(whoDrove, channelState, response, convo) {
 	convo.ask("Okay, " + whoDrove.userName + ". How many people can your car take?", function(response, convo) {
 		convo.say("An answer!");
 		howMany = parseInt(response.text);
-		isNaN(howMany) {
+		if (isNaN(howMany)) {
 			convo.say("Sorry, but I don't understand " + response.text);
 			convo.say("I asked how many people your car can hold!");
 			convo.repeat();
@@ -167,7 +170,7 @@ convoDroveInStepHowMany = function(whoDrove, channelState, response, convo) {
 	});
 }
 
-controller.hears(['next step'], 'direct_message,direct_mention,mention,ambient', function(bot, message) {
+controller.hears(['next step'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (!channelState) {
 			return;
@@ -227,7 +230,7 @@ startVetoProcess = function(bot, channelState, message) {
 	saveChannelState(channelState, function(err, id) {});
 }
 
-controller.hears(['veto (.*)'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['veto (.*)'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (!channelState.lunchState) {
 			return;
@@ -278,7 +281,7 @@ getSomeRestaurants = function(bot, message, channelState, weAreDriving, numLunch
 	return underscore.sample(filteredRestaurants, numLunchers);
 }
 
-controller.hears(['cancel lunch'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['cancel lunch'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (!channelState) {
 			return;
@@ -296,7 +299,7 @@ controller.hears(['cancel lunch'], 'direct_message,direct_mention,mention', func
 	});
 });
 
-controller.hears(['what are we doing'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['what are we doing'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (!channelState) {
 			return;
@@ -320,7 +323,7 @@ controller.hears(['what are we doing'], 'direct_message,direct_mention,mention',
 	});
 });
 
-controller.hears(['add restaurant'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['add restaurant'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (!channelState) {
 			return;
@@ -380,7 +383,7 @@ convoAddRestaurantRequiresDriving = function(whosTalking, restaurantName, channe
 	
 }
 
-controller.hears(['show restaurants'], 'direct_message,direct_mention,mention', function(bot, message) {
+controller.hears(['show restaurants'], globalListenMode, function(bot, message) {
 	bot.reply(message, "Okay! These are all of the restaurants I know about.");
 	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState || !channelState.restaurants) {
