@@ -10,6 +10,7 @@ Then, from git-bash, cd to the directory with bot.js in it, and run
 
 ```shell
 npm install botkit
+npm install machina
 ```
 
 Then run

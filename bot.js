@@ -8,6 +8,7 @@ var Botkit = require('./lib/Botkit.js');
 var underscore = require('./underscore-min.js');
 var os = require('os');
 var botConfig = require('./config.js');
+var machina = require('machina');
 
 var globalListenMode = botConfig.globalListenMode;
 
