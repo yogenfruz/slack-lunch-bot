@@ -8,7 +8,7 @@ var Botkit = require('botkit');
 var underscore = require('./underscore-min.js');
 var os = require('os');
 var botConfig = require('./config.js');
-var machina = require('machina');
+var Machina = require('machina');
 
 var globalListenMode = botConfig.globalListenMode;
 
@@ -26,6 +26,7 @@ function LunchState() {
 	this.whoDrove = {};
 	this.restaurantsLeft = [];
 	this.state = 'idle';
+	this.lunchStateMachine = {};
 };
 
 function ChannelState() {
@@ -71,6 +72,36 @@ saveChannelState = function(channelData, cb) {
 	controller.storage.channels.save(channelData, cb);
 }
 
+var lunchStateMachine = new Machina.BehavioralFsm( {
+	initialize: function (options) {
+		
+	},
+	
+	namespace: "lunch-machine",
+	
+	initialState: "idle",
+	
+	states: {
+		idle: {
+			letsHaveLunch: "roleCall"
+		},
+		roleCall: {
+			addLuncher: function(client) {
+				
+			},
+			addDriver: function(client) {
+				
+			}
+		}
+	}
+});
+
+controller.on(globalListenMode, function(bot, message) {
+	getChannelState(message.channel, function(err, channelState) {
+		
+	});
+});
+
 controller.hears(['lets have lunch'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
 		if (channelState.lunchState) {
@@ -82,8 +113,10 @@ controller.hears(['lets have lunch'], globalListenMode, function(bot, message) {
 		channelState.lunchState = new LunchState();		
 		
 		channelState.lunchState.state = 'whosIn';
+		lunchStateMachine.handle(channelState.lunchState.lunchStateMachine, "letsHaveLunch");
 		saveChannelState(channelState, function(err, id) {
 			bot.reply(message, "Let's have lunch then! Who's in?");
+			
 		});
 	});
 });
