@@ -36,3 +36,6 @@ CONTRIBUTING.md
 
 # Lunch-bots file storage
 json_file_store
+
+#Run Bot
+run-bot.sh

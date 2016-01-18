@@ -4,7 +4,7 @@ if (!process.env.token) {
     process.exit(1);
 }
 
-var Botkit = require('./lib/Botkit.js');
+var Botkit = require('botkit');
 var underscore = require('./underscore-min.js');
 var os = require('os');
 var botConfig = require('./config.js');
