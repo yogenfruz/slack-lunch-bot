@@ -5,7 +5,7 @@ if (!process.env.token) {
 }
 
 var Botkit = require('botkit');
-var underscore = require('./underscore-min.js');
+var underscore = require('underscore');
 var os = require('os');
 var botConfig = require('./config.js');
 var Machina = require('machina');

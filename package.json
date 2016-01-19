@@ -1,0 +1,20 @@
+{
+  "name": "slack-lunch-bot",
+  "version": "0.0.1",
+  "description": "A bot for organizing lunch through Slack chat",
+  "author": "Brandon Cauthers <brandon.cauthers@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yogenfruz/slack-lunch-bot"
+  },
+  "bugs": {
+    "url": "https://github.com/yogenfruz/slack-lunch-bot/issues"
+  },
+
+  "dependencies": {
+    "botkit": "0.0.5",
+    "underscore": "1.8.3",
+    "machina": "1.1.2"
+  },
+  "private": true
+}
