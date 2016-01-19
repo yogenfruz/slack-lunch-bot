@@ -8,7 +8,6 @@ var Botkit = require('botkit');
 var underscore = require('underscore');
 var os = require('os');
 var botConfig = require('./config.js');
-var Machina = require('machina');
 
 var globalListenMode = botConfig.globalListenMode;
 
@@ -71,36 +70,6 @@ getChannelState = function(channelId, cb) {
 saveChannelState = function(channelData, cb) {
 	controller.storage.channels.save(channelData, cb);
 }
-
-var lunchStateMachine = new Machina.BehavioralFsm( {
-	initialize: function (options) {
-		
-	},
-	
-	namespace: "lunch-machine",
-	
-	initialState: "idle",
-	
-	states: {
-		idle: {
-			letsHaveLunch: "roleCall"
-		},
-		roleCall: {
-			addLuncher: function(client) {
-				
-			},
-			addDriver: function(client) {
-				
-			}
-		}
-	}
-});
-
-controller.on(globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
-		
-	});
-});
 
 controller.hears(['lets have lunch'], globalListenMode, function(bot, message) {
 	getChannelState(message.channel, function(err, channelState) {
