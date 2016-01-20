@@ -11,13 +11,6 @@ var botConfig = require('./config.js');
 
 var globalListenMode = botConfig.globalListenMode;
 
-var logFunc = function() {
-	if (botConfig.loggingEnable == false) {
-		return;
-	}
-	console.log(arguments);
-}
-
 function LunchState() {
 	this.whosIn = {};
 	this.whoDrove = {};
@@ -60,9 +53,9 @@ var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
-var getChannelState = function(channelId, cb) {
-	controller.storage.channels.get(channelId, function(err, channelState){
-		if(!channelState) {
+var getChannelState = function (channelId, cb) {
+	controller.storage.channels.get(channelId, function (err, channelState) {
+		if (!channelState) {
 			console.log("Creating brand new channel state");
 			channelState = new ChannelState();
 			channelState.id = channelId;
@@ -71,7 +64,7 @@ var getChannelState = function(channelId, cb) {
 	});
 }
 
-var saveChannelState = function(channelData, cb) {
+var saveChannelState = function (channelData, cb) {
 	controller.storage.channels.save(channelData, cb);
 }
 
@@ -84,22 +77,18 @@ function Transition(eventName, sourceState, targetState) {
 function StateEventHandler(phrasesToRecognize, stateCallback) {
     this.phrasesToRecognize = phrasesToRecognize;
     this.stateCallback = stateCallback;
-    
-    this.handleMessage = function(bot, message) {
+
+    this.handleMessage = function (bot, message, channelState) {
         var phrase = message.text;
         var obj = this;
         if (this.doesHandlePhrase(phrase)) {
-            getChannelState(message.channel, function(err, channelState) {
-               logFunc(JSON.stringify(channelState));
-               logFunc(JSON.stringify(obj));
-               var newChannelState = obj.stateCallback(bot, message, channelState, stateManager);
-               saveChannelState(newChannelState); 
-            });
+            var newChannelState = obj.stateCallback(bot, message, channelState, stateManager);
+            return newChannelState;
         }
+        return channelState;
     }
-    
-    this.doesHandlePhrase = function(phrase) {
-        logFunc(JSON.stringify(this) + " testing to see if we handle phrase " + phrase);
+
+    this.doesHandlePhrase = function (phrase) {
 		for (var matchPhraseIdx = 0; matchPhraseIdx < this.phrasesToRecognize.length; ++matchPhraseIdx) {
 			var matchPhrase = this.phrasesToRecognize[matchPhraseIdx];
 			var matchRegex = new RegExp(matchPhrase);
@@ -113,18 +102,18 @@ function StateEventHandler(phrasesToRecognize, stateCallback) {
 
 function StateObject(stateName, stateEventHandlers) {
 	this.stateName = stateName;
-    this.stateEventHandlers =  stateEventHandlers;
+    this.stateEventHandlers = stateEventHandlers;
 	this.stateIsActive = false;
-	
-	this.activateState = function() {
+
+	this.activateState = function () {
 		this.stateIsActive = true;
 	}
-	
-	this.deactivateState = function() {
+
+	this.deactivateState = function () {
 		this.stateIsActive = false;
 	}
-    
-    this.phrasesToRecognize = function() {
+
+    this.phrasesToRecognize = function () {
         var phrases = [];
         for (var stateEventHandlerIdx = 0; stateEventHandlerIdx < stateEventHandlers.length; ++stateEventHandlerIdx) {
             var stateEventHandler = this.stateEventHandlers[stateEventHandlerIdx];
@@ -134,18 +123,19 @@ function StateObject(stateName, stateEventHandlers) {
         var uniquePhrases = underscore.unique(flattenedPhrases);
         return uniquePhrases;
     }
-	
-	this.tryHandleMessage = function(bot, message) {
+
+	this.tryHandleMessage = function (bot, message, channelState, stateController) {
 		var phrase = message.text;
 		for (var stateEventHandlerIdx = 0; stateEventHandlerIdx < stateEventHandlers.length; ++stateEventHandlerIdx) {
             var stateEventHandler = stateEventHandlers[stateEventHandlerIdx];
             if (stateEventHandler.doesHandlePhrase(phrase)) {
-                stateEventHandler.handleMessage(bot, message);
+                channelState = stateEventHandler.handleMessage(bot, message, channelState);
             }
         }
+        return channelState;
 	}
-    
-    this.doesHandlePhrase = function(phrase) {
+
+    this.doesHandlePhrase = function (phrase) {
         for (var stateEventHandlerIdx = 0; stateEventHandlerIdx < stateEventHandlers.length; ++stateEventHandlerIdx) {
             var stateEventHandler = stateEventHandlers[stateEventHandlerIdx];
             if (stateEventHandler.doesHandlePhrase(phrase)) {
@@ -153,46 +143,45 @@ function StateObject(stateName, stateEventHandlers) {
             }
         }
         return false;
-    }	
-	
+    }
+
 }
 
 function StateManager(states, transitions, controller) {
 	this.states = states;
 	this.controller = controller;
 	this.transitions = transitions;
-	
-	this.hearCallback = function(bot, message) {
-		for (var stateIdx = 0; stateIdx < this.states.length; ++stateIdx) {
-			var state = this.states[stateIdx];
-			if (state.stateIsActive) {
-				state.tryHandleMessage(bot, message, this);
-			}
-		}
+
+	this.hearCallback = function (bot, message) {
+        var obj = this;
+		getChannelState(message.channel, function (err, channelState) {
+            for (var stateIdx = 0; stateIdx < obj.states.length; ++stateIdx) {
+                var state = obj.states[stateIdx];
+                if (state.stateIsActive) {
+                    channelState = state.tryHandleMessage(bot, message, channelState, this);
+                }
+            }
+            saveChannelState(channelState, function (err, id) { });
+        });
 	}
-	
-	this.handleSignal = function(signal) {
-		logFunc("Got signal " + signal);
+
+	this.handleSignal = function (signal) {
 		var activeState = this.getActiveState();
-		
+
 		for (var transitionIdx = 0; transitionIdx < this.transitions.length; ++transitionIdx) {
 			var transition = this.transitions[transitionIdx];
 			if (signal == transition.eventName) {
-				logFunc("Want to go from state " + transition.sourceState + " to " + transition.targetState);
 				if (transition.sourceState == activeState.stateName) {
-					logFunc("Found sourceState " + activeState);
-					var newActiveState = underscore.find(this.states, function(state) { return state.stateName == transition.targetState});
-					logFunc("Found targetState " + newActiveState);
+					var newActiveState = underscore.find(this.states, function (state) { return state.stateName == transition.targetState });
 					activeState.deactivateState();
 					activeState = newActiveState;
 					newActiveState.activateState();
 				}
 			}
 		}
-		logFunc(JSON.stringify(states));
 	}
-	
-	this.getActiveState = function() {
+
+	this.getActiveState = function () {
 		for (var stateIdx = 0; stateIdx < this.states.length; ++stateIdx) {
 			var state = this.states[stateIdx];
 			if (state.stateIsActive) {
@@ -200,33 +189,29 @@ function StateManager(states, transitions, controller) {
 			}
 		}
 	}
-	
-	this.init = function(){
+
+	this.init = function () {
 		var allPhrases = [];
 		for (var stateIdx = 0; stateIdx < this.states.length; ++stateIdx) {
 			var state = this.states[stateIdx];
-			logFunc("Found state " + JSON.stringify(state));
             var statePhrases = state.phrasesToRecognize();
-            logFunc(statePhrases);
 			for (var phraseIdx = 0; phraseIdx < statePhrases.length; ++phraseIdx) {
 				var phrase = statePhrases[phraseIdx];
 				allPhrases.push(phrase);
 			}
 		}
 		var uniquePhrases = underscore.uniq(allPhrases);
-		logFunc("Unique phrases");
-		logFunc(JSON.stringify(uniquePhrases));
-		
+
 		this.allPhrases = uniquePhrases;
 		
 		// Let's always start the first state
 		this.states[0].activateState();
-		
+
 		var obj = this;
-		var callbackFunc = function(bot, message) {
+		var callbackFunc = function (bot, message) {
 			obj.hearCallback(bot, message);
 		}
-		
+
 		this.controller.hears(this.allPhrases, globalListenMode, callbackFunc);
 	}
 }
@@ -249,7 +234,7 @@ var idleStateCallback = function (bot, message, channelState, stateManager) {
 
 var idleStateLetsHaveLunchHandler = new StateEventHandler(['lets have lunch'], idleStateCallback);
 
-var idleState = new StateObject('idle', [idleStateLetsHaveLunchHandler] );
+var idleState = new StateObject('idle', [idleStateLetsHaveLunchHandler]);
 
 var roleCallStateCallback = function (bot, message, channelState, stateManager) {
 	bot.reply(message, "Got message from user " + message.user);
