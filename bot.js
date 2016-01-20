@@ -56,9 +56,9 @@ function VetoUser(userId, userName, hasVetoed) {
 
 Object.values = obj => Object.keys(obj).map(key => obj[key]);
 
-getChannelState = function(channelId, cb) {
-	controller.storage.channels.get(channelId, function(err, channelState){
-		if(!channelState) {
+getChannelState = function (channelId, cb) {
+	controller.storage.channels.get(channelId, function (err, channelState) {
+		if (!channelState) {
 			console.log("Creating brand new channel state");
 			channelState = new ChannelState();
 			channelState.id = channelId;
@@ -67,31 +67,31 @@ getChannelState = function(channelId, cb) {
 	});
 }
 
-saveChannelState = function(channelData, cb) {
+saveChannelState = function (channelData, cb) {
 	controller.storage.channels.save(channelData, cb);
 }
 
-controller.hears(['lets have lunch'], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['lets have lunch'], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (channelState.lunchState) {
 			if (channelState.lunchState.state != "idle") {
 				bot.reply(message, "Abandoning current lunch -> ");
 				bot.reply(message, JSON.stringify(channelState.lunchState));
 			}
 		}
-		channelState.lunchState = new LunchState();		
-		
+		channelState.lunchState = new LunchState();
+
 		channelState.lunchState.state = 'whosIn';
 		lunchStateMachine.handle(channelState.lunchState.lunchStateMachine, "letsHaveLunch");
-		saveChannelState(channelState, function(err, id) {
+		saveChannelState(channelState, function (err, id) {
 			bot.reply(message, "Let's have lunch then! Who's in?");
-			
+
 		});
 	});
 });
 
-controller.hears(['me', 'i am', 'yes', 'yeah', 'i did', "i'm in"], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['me', 'i am', 'yes', 'yeah', 'i did', "i'm in"], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState) {
 			return;
 		}
@@ -99,7 +99,7 @@ controller.hears(['me', 'i am', 'yes', 'yeah', 'i did', "i'm in"], globalListenM
 		if (!lunchState) {
 			return;
 		}
-		switch(lunchState.state) {
+		switch (lunchState.state) {
 			case 'whosIn':
 				handleAffirmativeInWhosIn(bot, message, channelState);
 				break;
@@ -110,13 +110,13 @@ controller.hears(['me', 'i am', 'yes', 'yeah', 'i did', "i'm in"], globalListenM
 				bot.reply(message, "I'm not in the right state for affimative replies. I am in state " + lunchState.state);
 				break;
 		}
-		
+
 	});
-	
+
 });
 
-handleAffirmativeInWhosIn = function(bot, message, channelState) {
-	bot.api.users.info({user: message.user}, function (err, userInfo) {
+handleAffirmativeInWhosIn = function (bot, message, channelState) {
+	bot.api.users.info({ user: message.user }, function (err, userInfo) {
 		userId = message.user;
 		userName = userInfo.user.name;
 		lunchState = channelState.lunchState;
@@ -128,7 +128,7 @@ handleAffirmativeInWhosIn = function(bot, message, channelState) {
 			bot.reply(message, "You're already in");
 		}
 		channelState.lunchState = lunchState;
-		saveChannelState(channelState, function(err, id) {
+		saveChannelState(channelState, function (err, id) {
 			whosIn = [];
 			for (user in lunchState.whosIn) {
 				whosIn.push(lunchState.whosIn[user].userName);
@@ -136,22 +136,22 @@ handleAffirmativeInWhosIn = function(bot, message, channelState) {
 			bot.reply(message, "The following people are in: " + Object.values(whosIn).join(', '));
 		});
 	});
-	
+
 }
 
-handleAffirmativeBeginDriveConvo = function(bot, message, channelState) {
-	bot.api.users.info({user: message.user}, function(err, userInfo) {
+handleAffirmativeBeginDriveConvo = function (bot, message, channelState) {
+	bot.api.users.info({ user: message.user }, function (err, userInfo) {
 		userId = message.user;
 		userName = userInfo.user.name;
 		lunchState = channelState.lunchState;
-		bot.startConversation(message, function(response, convo) {
-			convoDroveInStepHowMany({userId: userId, userName: userName}, channelState, response, convo);
+		bot.startConversation(message, function (response, convo) {
+			convoDroveInStepHowMany({ userId: userId, userName: userName }, channelState, response, convo);
 		});
 	});
 }
 
-convoDroveInStepHowMany = function(whoDrove, channelState, response, convo) {
-	convo.ask("Okay, " + whoDrove.userName + ". How many people can your car take?", function(response, convo) {
+convoDroveInStepHowMany = function (whoDrove, channelState, response, convo) {
+	convo.ask("Okay, " + whoDrove.userName + ". How many people can your car take?", function (response, convo) {
 		convo.say("An answer!");
 		howMany = parseInt(response.text);
 		if (isNaN(howMany)) {
@@ -161,20 +161,20 @@ convoDroveInStepHowMany = function(whoDrove, channelState, response, convo) {
 			convo.next();
 			return;
 		}
-		bot.api.users.info({user: response.user}, function(err, userInfo) {
+		bot.api.users.info({ user: response.user }, function (err, userInfo) {
 			userId = response.user;
 			userName = userInfo.user.name;
-			driverUser = new Driver( new User(userId, userName), howMany);
+			driverUser = new Driver(new User(userId, userName), howMany);
 			channelState.lunchState.whoDrove[userId] = driverUser;
 			convo.say("Cool. I'm adding driver " + userName + " who can take " + howMany + " people.");
-			saveChannelState(channelState, function(err, id) {} );
+			saveChannelState(channelState, function (err, id) { });
 			convo.next();
 		});
 	});
 }
 
-controller.hears(['next step'], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['next step'], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState) {
 			return;
 		}
@@ -184,7 +184,7 @@ controller.hears(['next step'], globalListenMode, function(bot, message) {
 		if (channelState.lunchState.state == 'idle') {
 			return;
 		}
-		cb = function () {};
+		cb = function () { };
 		switch (channelState.lunchState.state) {
 			case 'whosIn':
 				channelState.lunchState.state = 'whoDrove';
@@ -193,7 +193,7 @@ controller.hears(['next step'], globalListenMode, function(bot, message) {
 			case 'whoDrove':
 				channelState.lunchState.state = 'startingVetoProcess';
 				bot.reply(message, "Okay, let's move on. Starting veto process");
-				cb = function(err, id) {
+				cb = function (err, id) {
 					startVetoProcess(bot, channelState, message);
 				}
 				break;
@@ -204,7 +204,7 @@ controller.hears(['next step'], globalListenMode, function(bot, message) {
 	});
 });
 
-startVetoProcess = function(bot, channelState, message) {
+startVetoProcess = function (bot, channelState, message) {
 	lunchState = channelState.lunchState;
 	numLunchers = Object.keys(lunchState.whosIn).length;
 	numCarSeats = 0;
@@ -230,11 +230,11 @@ startVetoProcess = function(bot, channelState, message) {
 		lunchState = new LunchState();
 	}
 	channelState.lunchState = lunchState;
-	saveChannelState(channelState, function(err, id) {});
+	saveChannelState(channelState, function (err, id) { });
 }
 
-controller.hears(['veto (.*)'], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['veto (.*)'], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState.lunchState) {
 			return;
 		}
@@ -252,7 +252,7 @@ controller.hears(['veto (.*)'], globalListenMode, function(bot, message) {
 			bot.reply(message, "Restaurants left: " + restaurantsLeft.join("|"));
 			return;
 		}
-		
+
 		var restarauntVetoIdx = restaurantsLeft.indexOf(retaurantVeto);
 		if (restarauntVetoIdx == -1) {
 			bot.reply(message, "Sorry, I don't understand the restaurant " + retaurantVeto);
@@ -272,20 +272,20 @@ controller.hears(['veto (.*)'], globalListenMode, function(bot, message) {
 			bot.reply(message, "Cool. We have the following restaurants left: " + restaurantsLeft.join("|"));
 		}
 		channelState.lunchState = lunchState;
-		saveChannelState(channelState, function (err, id) {} );
+		saveChannelState(channelState, function (err, id) { });
 	});
 });
 
-getSomeRestaurants = function(bot, message, channelState, weAreDriving, numLunchers) {
+getSomeRestaurants = function (bot, message, channelState, weAreDriving, numLunchers) {
 	restaurants = channelState.restaurants;
-	filteredRestaurants = Object.keys(restaurants).filter(function(restaurant) {
+	filteredRestaurants = Object.keys(restaurants).filter(function (restaurant) {
 		return (restaurants[restaurant].requiresCar == weAreDriving);
 	});
 	return underscore.sample(filteredRestaurants, numLunchers);
 }
 
-controller.hears(['cancel lunch'], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['cancel lunch'], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState) {
 			return;
 		}
@@ -298,12 +298,12 @@ controller.hears(['cancel lunch'], globalListenMode, function(bot, message) {
 		bot.reply(message, "Got it. I'm abandoning the current lunch ->");
 		bot.reply(message, JSON.stringify(channelState.lunchState));
 		channelState.lunchState = new LunchState();
-		saveChannelState(channelState, function(err, id) {});
+		saveChannelState(channelState, function (err, id) { });
 	});
 });
 
-controller.hears(['what are we doing'], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['what are we doing'], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState) {
 			return;
 		}
@@ -326,20 +326,20 @@ controller.hears(['what are we doing'], globalListenMode, function(bot, message)
 	});
 });
 
-controller.hears(['add restaurant'], globalListenMode, function(bot, message) {
-	getChannelState(message.channel, function(err, channelState) {
+controller.hears(['add restaurant'], globalListenMode, function (bot, message) {
+	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState) {
 			return;
 		}
 		if (!channelState.restaurants) {
 			channelState.restaurants = {};
 		}
-		bot.api.users.info({user: message.user}, function(err, userInfo) {
+		bot.api.users.info({ user: message.user }, function (err, userInfo) {
 			userId = message.user;
 			userName = userInfo.user.name;
 			console.log("Start convo");
 			console.log(JSON.stringify(message));
-			bot.startConversation(message, function(response, convo) {
+			bot.startConversation(message, function (response, convo) {
 				console.log("in convo");
 				convoAddRestaurantGimmeName(userName, channelState, response, convo);
 			});
@@ -347,9 +347,9 @@ controller.hears(['add restaurant'], globalListenMode, function(bot, message) {
 	});
 });
 
-convoAddRestaurantGimmeName = function(whosTalking, channelState, response, convo) {
+convoAddRestaurantGimmeName = function (whosTalking, channelState, response, convo) {
 	console.log("Got response1");
-	convo.ask("Okay, " + whosTalking + ". What is the name of the new restaurant?", function(response, convo) {
+	convo.ask("Okay, " + whosTalking + ". What is the name of the new restaurant?", function (response, convo) {
 		restaurantName = response.text;
 		if (channelState.restaurants[restaurantName]) {
 			convo.say("The restaurant " + restaurantName + " already exists. Please name a new restaurant");
@@ -360,11 +360,11 @@ convoAddRestaurantGimmeName = function(whosTalking, channelState, response, conv
 		convoAddRestaurantRequiresDriving(whosTalking, restaurantName, channelState, response, convo);
 		convo.next();
 	});
-	
+
 }
 
-convoAddRestaurantRequiresDriving = function(whosTalking, restaurantName, channelState, response, convo) {
-	convo.ask("Okay, " + whosTalking + ". Does " + restaurantName + " require a car to get to?", function(response, convo) {
+convoAddRestaurantRequiresDriving = function (whosTalking, restaurantName, channelState, response, convo) {
+	convo.ask("Okay, " + whosTalking + ". Does " + restaurantName + " require a car to get to?", function (response, convo) {
 		requiresCar = response.text;
 		gotYes = bot.utterances.yes.test(requiresCar);
 		gotNo = bot.utterances.no.test(requiresCar);
@@ -372,21 +372,20 @@ convoAddRestaurantRequiresDriving = function(whosTalking, restaurantName, channe
 			convo.say("Sorry, I didn't understand that.");
 			convo.repeat();
 		}
-		else
-		{
+		else {
 			convo.say("Got it! I'm going to add the restaurant " + restaurantName + " and it " + (gotYes ? "does" : "doesn't") + " require driving");
 			newRestaurant = new Restaurant(restaurantName, gotYes);
 			channelState.restaurants[restaurantName] = newRestaurant;
-			saveChannelState(channelState, function(err, id) {
-				
+			saveChannelState(channelState, function (err, id) {
+
 			});
 		}
 		convo.next();
 	});
-	
+
 }
 
-controller.hears(['show restaurants'], globalListenMode, function(bot, message) {
+controller.hears(['show restaurants'], globalListenMode, function (bot, message) {
 	bot.reply(message, "Okay! These are all of the restaurants I know about.");
 	getChannelState(message.channel, function (err, channelState) {
 		if (!channelState || !channelState.restaurants) {
@@ -395,7 +394,7 @@ controller.hears(['show restaurants'], globalListenMode, function(bot, message) 
 		}
 		for (restaurant in channelState.restaurants) {
 			restaurantInfo = channelState.restaurants[restaurant];
-			bot.reply(message, "There's one called " + restaurant + " that " + (restaurantInfo.requiresCar ? "does" : "doesn't" ) + " require a car");
+			bot.reply(message, "There's one called " + restaurant + " that " + (restaurantInfo.requiresCar ? "does" : "doesn't") + " require a car");
 		}
 	});
 });
