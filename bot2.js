@@ -9,7 +9,7 @@ var underscore = require('underscore');
 var os = require('os');
 var botConfig = require('./config.js');
 
-var stateMachine = require('./lib/StateMachine.js');
+var stateMachine = require('./lib/StateMachines.js');
 
 var globalListenMode = botConfig.globalListenMode;
 
@@ -86,7 +86,25 @@ var rolleCallImInHandler = new stateMachine.StateEventHandler(["i'm in", "me"], 
 
 var roleCallState = new stateMachine.StateObject('roleCall', [rolleCallImInHandler]);
 
+
+var askRestaurantName = function(response, convo) {
+	convo.ask("What is the name of the restaurant you wish to add?", function(response, convo) {
+		convo.say("Cool.");
+		askRestaurantRequiresCar(response, convo);
+		convo.next();
+	});
+}
+
+var askRestaurantRequiresCar = function(response, convo) {
+	convo.ask("Does it require a car to get to?", function(response, convo) {
+		convo.say("Cool");
+		convo.next();
+	});
+}
+
 var addRestaurantCallback = function (bot, message, channelState, stateManager) {
+	bot.reply(message, "Okay, let's add a restaurant.");
+	bot.startConversation(message, askRestaurantName);
 	return channelState;
 }
 
@@ -94,7 +112,8 @@ var addRestaurantHandler = new stateMachine.StateEventHandler(["add restaurant"]
 
 var allTransitions = [idleToRoleCall, roleCallToGatherRestaurants, roleCallToIdle, gatherRestaurantsToVeto, gatherRestaurantsToIdle];
 var allStates = [idleState, roleCallState];
+var allGlobalEvents = [addRestaurantHandler];
 
-var stateManager = new stateMachine.StateManager(allStates, allTransitions, [], controller, globalListenMode);
+var stateManager = new stateMachine.StateManager(allStates, allTransitions, allGlobalEvents, controller, globalListenMode);
 
 stateManager.init();
