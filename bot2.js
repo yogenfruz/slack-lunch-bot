@@ -72,7 +72,7 @@ var idleStateCallback = function (bot, message, channelState, stateManager) {
 	return channelState;
 };
 
-var idleStateLetsHaveLunchHandler = new stateMachine.StateEventHandler(['lets have lunch'], idleStateCallback);
+var idleStateLetsHaveLunchHandler = new stateMachine.StateEventHandler(['lets have lunch'], idleStateCallback, "begin a lunch rolecall.");
 
 var idleState = new stateMachine.StateObject('idle', [idleStateLetsHaveLunchHandler]);
 
@@ -82,7 +82,7 @@ var roleCallStateCallback = function (bot, message, channelState, stateManager) 
 	return channelState;
 };
 
-var rolleCallImInHandler = new stateMachine.StateEventHandler(["i'm in", "me"], roleCallStateCallback);
+var rolleCallImInHandler = new stateMachine.StateEventHandler(["i'm in", "me"], roleCallStateCallback, "add the current user to lunch.");
 
 var roleCallState = new stateMachine.StateObject('roleCall', [rolleCallImInHandler]);
 
@@ -108,7 +108,7 @@ var addRestaurantCallback = function (bot, message, channelState, stateManager) 
 	return channelState;
 }
 
-var addRestaurantHandler = new stateMachine.StateEventHandler(["add restaurant"], addRestaurantCallback);
+var addRestaurantHandler = new stateMachine.StateEventHandler(["add restaurant"], addRestaurantCallback, "begin a conversation to add a new restaurant to the list.");
 
 var allTransitions = [idleToRoleCall, roleCallToGatherRestaurants, roleCallToIdle, gatherRestaurantsToVeto, gatherRestaurantsToIdle];
 var allStates = [idleState, roleCallState];
