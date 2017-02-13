@@ -1,7 +1,5 @@
 var lunchData = require('../lib/LunchData.js');
-var stateMachine = require('../lib/StateMachines.js');
-var utils = require('../lib/Utils.js');
-
+var stateMachine = require('bot-state-machine');
 var underscore = require('underscore');
 
 var roleCallToGatherRestaurants = new stateMachine.Transition('next-step', 'roleCall', 'gatherRestaurants');

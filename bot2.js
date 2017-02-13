@@ -9,8 +9,7 @@ var underscore = require('underscore');
 var os = require('os');
 var botConfig = require('./config.js');
 
-var stateMachine = require('./lib/StateMachines.js');
-var utils = require('./lib/Utils.js');
+var stateMachine = require('bot-state-machine');
 
 var roleCallState = require('./states/RoleCallState.js');
 var idleState = require('./states/IdleState.js');
