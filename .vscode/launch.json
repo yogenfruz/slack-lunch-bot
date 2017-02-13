@@ -5,16 +5,17 @@
 			"name": "Launch",
 			"type": "node",
 			"request": "launch",
-			"program": "bot2.js",
-			"stopOnEntry": true,
+			"program": "${workspaceRoot}/bot2.js",
+			"stopOnEntry": false,
 			"args": [],
-			"cwd": ".",
+			"cwd": "${workspaceRoot}/.",
 			"runtimeExecutable": null,
 			"runtimeArgs": [
 				"--nolazy"
 			],
 			"env": {
-				"NODE_ENV": "development"
+				"NODE_ENV": "development",
+				"TOKEN": "xoxb-18716943907-dXb2neTC4L2C1E9zgDuq60O6"
 			},
 			"externalConsole": false,
 			"sourceMaps": false,

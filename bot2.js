@@ -14,6 +14,7 @@ var utils = require('./lib/Utils.js');
 
 var roleCallState = require('./states/RoleCallState.js');
 var idleState = require('./states/IdleState.js');
+var gatherRestaurants = require('./states/GatherRestaurants.js');
 
 var addRestaurantGlobalEvent = require('./states/AddRestaurantGlobalEvent.js');
 
@@ -28,14 +29,13 @@ var bot = controller.spawn({
     token: process.env.token
 }).startRTM();
 
-var gatherRestaurantsToVeto = new stateMachine.Transition('next-step', 'gatherRestaurants', 'veto');
-var gatherRestaurantsToIdle = new stateMachine.Transition('cancel', 'gatherRestaurants', 'idle');
 
-var allTransitions = [gatherRestaurantsToVeto, gatherRestaurantsToIdle];
+
+var allTransitions = [];
 var allStates = [];
 var allGlobalEvents = [];
 
-var stateModules = [idleState, roleCallState, addRestaurantGlobalEvent];
+var stateModules = [idleState, roleCallState, gatherRestaurants, addRestaurantGlobalEvent];
 
 for (var stateModuleIdx = 0; stateModuleIdx < stateModules.length; ++stateModuleIdx) {
 	var stateModule = stateModules[stateModuleIdx];

@@ -11,7 +11,7 @@ var idleStateCallback = function (bot, message, channelState, stateManager) {
 	bot.reply(message, "Who's in and who drove?");
 	var channelData = channelState.channelData;
 	channelData.lunchState = new lunchData.LunchState();
-	stateManager.handleSignal('begin');
+	stateManager.handleSignal('begin', bot, message);
 	return channelState;
 };
 

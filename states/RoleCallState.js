@@ -73,7 +73,15 @@ var roleCallIDroveCallback = function (bot, message, channelState, stateManager)
 
 var roleCallIDroveHandler = new stateMachine.StateEventHandler(['i drove'], roleCallIDroveCallback, "adds the current user's vehicle to lunch.");
 
-var roleCallState = new stateMachine.StateObject('roleCall', [roleCallImInHandler, roleCallIDroveHandler]);
+var roleCallNextStepCallback = function (bot, message, channelState, stateManager) {
+	bot.reply(message, "Okay, let's move on.");
+	stateManager.handleSignal('next-step', bot, message);
+	return channelState;
+}
+
+var roleCallNextStepHandler = new stateMachine.StateEventHandler(['lets move on', 'next step'], roleCallNextStepCallback, "advances the lunch conversation to the next step");
+
+var roleCallState = new stateMachine.StateObject('roleCall', [roleCallImInHandler, roleCallIDroveHandler, roleCallNextStepHandler]);
 
 var allTransitions = [roleCallToGatherRestaurants, roleCallToIdle];
 var allStates = [roleCallState];
