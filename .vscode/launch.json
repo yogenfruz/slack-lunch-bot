@@ -15,7 +15,7 @@
 			],
 			"env": {
 				"NODE_ENV": "development",
-				"TOKEN": "xoxb-18716943907-dXb2neTC4L2C1E9zgDuq60O6"
+				"TOKEN": ""
 			},
 			"externalConsole": false,
 			"sourceMaps": false,
